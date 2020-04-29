@@ -15,6 +15,37 @@
 
 int event[10000][3];
 
+struct queue{
+    int top;
+    int end;
+    int element[1000];
+};
+struct queue Queue;
+
+
+void push(int a){
+    Queue.element[Queue.end] = a;
+    Queue.end = (Queue.end + 1) % 1000;
+
+}
+
+int is_empty(){
+    if(Queue.top == Queue.end)
+        return 1;
+    else
+        return 0;
+}
+
+int pop(){
+    int a = Queue.element[Queue.top];
+    Queue.top = (Queue.top + 1) % 1000;
+    return a;
+}
+
+int get_(){
+    int a = Queue.element[Queue.top];
+    return a;
+}
 
 int RR_cmp(const void *a, const void *b){
     Task *c = (Task *)a;
@@ -28,6 +59,8 @@ int RR_cmp(const void *a, const void *b){
 }
 
 void RR(){
+    Queue.top = 0;
+    Queue.end = 0;
     qsort(task, N, sizeof(Task), RR_cmp);
     int remain_of_task[N];
     for(int i = 0; i < N; i++){
@@ -43,6 +76,12 @@ void RR(){
     
     while(finish < N){
         int created = 0;
+        if(is_empty()){
+            now_job = finish;
+            while(remain_of_task[now_job] == -1){
+                now_job = now_job + 1;
+            }
+        }
         if(task[now_job].arrive > task_end){
             event[event_ptr][0] = 0;
             event[event_ptr][1] = task[now_job].arrive - task_end;
@@ -53,6 +92,7 @@ void RR(){
             event[event_ptr][0] = 1;
             event[event_ptr][1] = 0;
             event[event_ptr][2] = now_job;
+            push(now_job);
             event_ptr += 1;
             created_job += 1;
         }
@@ -61,13 +101,17 @@ void RR(){
             event[event_ptr][0] = 1;
             event[event_ptr][1] = 0;
             event[event_ptr][2] = now_job;
+            push(now_job);
             event_ptr += 1;
             created_job += 1;
         }
+        now_job = pop();
+        int is_finish = 0;
         if(remain_of_task[now_job] <= 500){
             task_end = task_begin + remain_of_task[now_job];
             remain_of_task[now_job] = -1;
             finish += 1;
+            is_finish = 1;
         }
         else{
             task_end = task_begin + 500;
@@ -76,6 +120,7 @@ void RR(){
         for(int i = created_job + 1; i < N; i++){
             if(task[i].arrive >= task_begin && task[i].arrive < task_end){
                 created += 1;
+                push(i);
             }
             else{
                 break;
@@ -111,12 +156,15 @@ void RR(){
             event_ptr += 1;
             task_begin = task_end;
         }
-        now_job = (now_job + 1) % (created_job + 1);
-        if(finish < N){
-            while(remain_of_task[now_job] == -1){
-                now_job = (now_job + 1) % (created_job + 1);
-            }
+        if(!is_finish){
+            push(now_job);
         }
+        // now_job = (now_job + 1) % (created_job + 1);
+        // if(finish < N){
+        //     while(remain_of_task[now_job] == -1){
+        //         now_job = (now_job + 1) % (created_job + 1);
+        //     }
+        // }
     }
     for(int i = 0; i < event_ptr; i++){
         // fprintf(stderr, "event = %d\n", event[i][0]);
